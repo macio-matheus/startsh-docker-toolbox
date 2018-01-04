@@ -61,6 +61,7 @@ if [ $VM_EXISTS_CODE -eq 1 ]; then
 fi
 
 STEP="Checking status on $VM"
+cont=0; # Tentativas
 VM_STATUS="$(${DOCKER_MACHINE} status ${VM} 2>&1)"
 if [ "${VM_STATUS}" != "Running" ]; then
   "${DOCKER_MACHINE}" start "${VM}"
@@ -68,11 +69,19 @@ if [ "${VM_STATUS}" != "Running" ]; then
   eval $(docker-machine env default)
   yes |"${DOCKER_MACHINE}" regenerate-certs "${VM}"
   eval $(docker-machine env default)
-  if [ "${VM_STATUS}" != "Running" ]; then
+  echo "Começando a executar as tentativas de correção de erros!"
+  
+  while [ "${VM_STATUS}" != "Running" & $cont -lt 5]; do
+    echo "Tentativa: $cont de 5 .."
     "${DOCKER_MACHINE}" restart "${VM}"
     yes | "${DOCKER_MACHINE}" regenerate-certs "${VM}"
     "${DOCKER_MACHINE}" env "${VM}"
-  fi
+    eval $(docker-machine env default)
+    yes | "${DOCKER_MACHINE}" regenerate-certs "${VM}" 
+    eval $(docker-machine env default)
+    yes |"${DOCKER_MACHINE}" regenerate-certs "${VM}"
+    let cont=$cont+1;
+  done
 fi
 
 STEP="Setting env"
@@ -96,6 +105,10 @@ cat << EOF
 EOF
 echo -e "${BLUE}docker${NC} is configured to use the ${GREEN}${VM}${NC} machine with IP ${GREEN}$(${DOCKER_MACHINE} ip ${VM})${NC}"
 echo "For help getting started, check out the docs at https://docs.docker.com"
+c=0
+if [ $cont -gt  $c ]; then
+  echo "Encontrou erros ao iniciar, mas conseguiu se recuperar a $cont tentativa(as)" 
+fi
 echo
 cd
 
