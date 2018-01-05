@@ -71,7 +71,7 @@ if [ "${VM_STATUS}" != "Running" ]; then
   eval $(docker-machine env default)
   echo "Começando a executar as tentativas de correção de erros!"
   
-  while [ "${VM_STATUS}" != "Running" & $cont -lt 5]; do
+  while [[ "${VM_STATUS}" != "Running" ]] && [[ $cont -lt 5 ]]; do
     echo "Tentativa: $cont de 5 .."
     "${DOCKER_MACHINE}" restart "${VM}"
     yes | "${DOCKER_MACHINE}" regenerate-certs "${VM}"
@@ -90,8 +90,6 @@ eval "$(${DOCKER_MACHINE} env --shell=bash --no-proxy ${VM})"
 STEP="Finalize"
 clear
 cat << EOF
-
-
                         ##         .
                   ## ## ##        ==
                ## ## ## ## ##    ===
@@ -101,7 +99,6 @@ cat << EOF
              \    \         __/
               \____\_______/
             By: Mácio Matheus Arruda
-
 EOF
 echo -e "${BLUE}docker${NC} is configured to use the ${GREEN}${VM}${NC} machine with IP ${GREEN}$(${DOCKER_MACHINE} ip ${VM})${NC}"
 echo "For help getting started, check out the docs at https://docs.docker.com"
