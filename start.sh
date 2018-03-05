@@ -7,7 +7,7 @@ trap '[ "$?" -eq 0 ] || read -p "Looks like something went wrong in step ´$STEP
 # Docker for Windows when launching using the Quickstart.
 export PATH="/c/Program Files/Docker Toolbox:$PATH"
 VM=${DOCKER_MACHINE_NAME-default}
-DOCKER_MACHINE=./docker-machine.exe
+DOCKER_MACHINE=docker-machine.exe
 
 STEP="Looking for vboxmanage.exe"
 if [ ! -z "$VBOX_MSI_INSTALL_PATH" ]; then
@@ -61,28 +61,16 @@ if [ $VM_EXISTS_CODE -eq 1 ]; then
 fi
 
 STEP="Checking status on $VM"
-cont=0; # Tentativas
 VM_STATUS="$(${DOCKER_MACHINE} status ${VM} 2>&1)"
 if [ "${VM_STATUS}" != "Running" ]; then
   "${DOCKER_MACHINE}" start "${VM}"
-  yes | "${DOCKER_MACHINE}" regenerate-certs "${VM}" 
-  eval $(docker-machine env default)
-  yes |"${DOCKER_MACHINE}" regenerate-certs "${VM}"
-  eval $(docker-machine env default)
-  echo "Começando a executar as tentativas de correção de erros!"
-  
-  while [[ "${VM_STATUS}" != "Running" ]] && [[ $cont -lt 5 ]]; do
-    echo "Tentativa: $cont de 5 .."
-    "${DOCKER_MACHINE}" restart "${VM}"
-    yes | "${DOCKER_MACHINE}" regenerate-certs "${VM}"
-    "${DOCKER_MACHINE}" env "${VM}"
-    eval $(docker-machine env default)
-    yes | "${DOCKER_MACHINE}" regenerate-certs "${VM}" 
-    eval $(docker-machine env default)
-    yes |"${DOCKER_MACHINE}" regenerate-certs "${VM}"
-    let cont=$cont+1;
-  done
+  yes | "${DOCKER_MACHINE}" regenerate-certs "${VM}"
 fi
+
+"${DOCKER_MACHINE}" restart "${VM}" 
+yes | "${DOCKER_MACHINE}" regenerate-certs "${VM}" 
+"${DOCKER_MACHINE}" env "${VM}"
+eval "$(${DOCKER_MACHINE} env ${VM})"
 
 STEP="Setting env"
 eval "$(${DOCKER_MACHINE} env --shell=bash --no-proxy ${VM})" 
@@ -98,15 +86,11 @@ cat << EOF
            \______ o           __/
              \    \         __/
               \____\_______/
-            By: Mácio Matheus Arruda
+            Modified By: Mácio Matheus Arruda
 EOF
 echo -e "${BLUE}docker${NC} is configured to use the ${GREEN}${VM}${NC} machine with IP ${GREEN}$(${DOCKER_MACHINE} ip ${VM})${NC}"
 echo "For help getting started, check out the docs at https://docs.docker.com"
-c=0
-if [ $cont -gt  $c ]; then
-  echo "Encontrou erros ao iniciar, mas conseguiu se recuperar a $cont tentativa(as)" 
-fi
-echo
+
 cd
 
 docker () {
